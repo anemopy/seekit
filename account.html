@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="description" content="SeekIt — Your account. Manage orders, reservations, addresses and preferences." />
+  <title>Account — SeekIt</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/webp" href="logo.webp" />
+</head>
+
+<body>
+  <div id="app">
+    <!-- App Header Gradient (Screenshot 5 Match) -->
+    <header class="app-header-gradient" style="padding-bottom: 38px;">
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 6px;">
+        <button class="header-icon-btn" id="btn-account-settings" aria-label="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- User Profile Avatar & Name Row -->
+      <div class="account-user-banner" id="account-header-card">
+        <div class="account-avatar-ring" id="account-avatar">
+          👤
+        </div>
+        <div class="account-user-details">
+          <h2 class="account-user-heading" id="account-user-name">Guest User</h2>
+          <p class="account-user-subtext" id="account-user-email">Sign in to enjoy a better experience</p>
+        </div>
+      </div>
+
+      <!-- Auth Action Button (Sign In / Sign Out) -->
+      <div class="account-auth-buttons-row" id="account-auth-actions">
+        <button class="btn-account-signin" id="btn-account-login">Sign In</button>
+      </div>
+    </header>
+
+    <!-- Curved Main Content Sheet -->
+    <main class="curved-sheet-content">
+      <!-- My Activity Section -->
+      <h3 class="account-section-heading">My Activity</h3>
+      <div class="account-activity-grid">
+        <div class="activity-tile-card" id="menu-orders">
+          <span class="activity-tile-icon" style="color: #DC2626;">🛍️</span>
+          <span class="activity-tile-title">My Orders</span>
+          <span class="activity-tile-badge" id="orders-count-badge">0</span>
+        </div>
+
+        <div class="activity-tile-card" id="menu-reservations">
+          <span class="activity-tile-icon" style="color: #2563EB;">📋</span>
+          <span class="activity-tile-title">My Reservations</span>
+          <span class="activity-tile-badge" id="reservations-badge">0</span>
+        </div>
+
+        <div class="activity-tile-card" id="menu-saved">
+          <span class="activity-tile-icon" style="color: #DC2626;">🔖</span>
+          <span class="activity-tile-title">Saved Items</span>
+          <span class="activity-tile-badge" id="saved-count-badge">0</span>
+        </div>
+      </div>
+
+      <!-- My Addresses Section -->
+      <div class="section-header-row" style="margin-bottom: 8px;">
+        <h3 class="account-section-heading" style="margin-bottom: 0;">My Addresses</h3>
+        <button class="section-link-action" id="btn-add-address" style="background: none; border: none; cursor: pointer;">+ Add New</button>
+      </div>
+
+      <div class="account-address-card" id="address-card-container">
+        <div class="address-empty-icon">📍</div>
+        <h4 class="address-empty-title">No addresses saved</h4>
+        <p class="address-empty-desc">Add your address for faster checkout.</p>
+      </div>
+
+      <!-- Settings & Help Menu -->
+      <div class="account-menu-list">
+        <a href="#" class="account-menu-link" id="menu-help">
+          <div class="account-menu-left">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <span>Help &amp; Support</span>
+          </div>
+          <svg class="account-menu-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </a>
+
+        <a href="#" class="account-menu-link" id="menu-settings-link">
+          <div class="account-menu-left">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span>Settings</span>
+          </div>
+          <svg class="account-menu-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </a>
+      </div>
+
+    </main>
+
+    <!-- Reservations Modal -->
+    <div class="modal-overlay" id="reservations-modal">
+      <div class="modal-sheet" style="max-height: 85vh; overflow-y: auto;">
+        <div class="modal-handle"></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 class="modal-title" style="margin-bottom: 0;">My Reservations</h3>
+          <button id="close-reservations-btn" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #9CA3AF; padding: 4px;">✕</button>
+        </div>
+
+        <div class="reservations-list" id="reservations-list">
+          <!-- Populated from storage -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation (5 Tabs - Account Active) -->
+    <nav class="bottom-nav">
+      <a class="nav-item" href="index.html" id="nav-home">
+        <div class="nav-icon-container">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+        </div>
+        <span class="nav-label">Home</span>
+      </a>
+
+      <a class="nav-item" href="categories.html" id="nav-categories">
+        <div class="nav-icon-container">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1.5" />
+            <rect x="14" y="3" width="7" height="7" rx="1.5" />
+            <rect x="3" y="14" width="7" height="7" rx="1.5" />
+            <rect x="14" y="14" width="7" height="7" rx="1.5" />
+          </svg>
+        </div>
+        <span class="nav-label">Categories</span>
+      </a>
+
+      <a class="nav-item" href="cart.html" id="nav-cart">
+        <div class="nav-icon-container">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="9" cy="21" r="1" />
+            <circle cx="20" cy="21" r="1" />
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+          </svg>
+        </div>
+        <span class="nav-label">Cart</span>
+      </a>
+
+      <a class="nav-item" href="shops.html" id="nav-shops">
+        <div class="nav-icon-container">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l1-4h16l1 4" />
+            <path d="M3 9v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9" />
+            <path d="M9 21V13h6v8" />
+            <path d="M3 9h18" />
+          </svg>
+        </div>
+        <span class="nav-label">Shops</span>
+      </a>
+
+      <a class="nav-item active" href="account.html" id="nav-profile">
+        <div class="nav-icon-container">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+        </div>
+        <span class="nav-label">Account</span>
+      </a>
+    </nav>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="app.js"></script>
+</body>
+
+</html>

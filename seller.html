@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="description" content="SeekIt — Seller & Shopkeeper Dashboard. Manage your local shop inventory, stock and customer reservations." />
+  <title>Seller Dashboard — SeekIt</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/webp" href="logo.webp" />
+</head>
+
+<body>
+  <div id="app">
+    <!-- App Header Gradient -->
+    <header class="app-header-gradient" style="padding-bottom: 28px;">
+      <!-- Centered Logo & Brand -->
+      <div class="header-top-brand-row" style="justify-content: center;">
+        <a href="index.html" class="header-brand-title" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 0;">
+          <img src="logo.png" alt="SeekIt Logo" style="height: 36px; width: auto; object-fit: contain; margin: 0; padding: 0;" />
+          <span>SeekIt</span>
+        </a>
+      </div>
+
+      <!-- Seller Profile Header Banner -->
+      <div style="margin-top: 10px; text-align: center;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 0.74rem; font-weight: 800; color: #10B981; background: rgba(16, 185, 129, 0.18); border: 1px solid rgba(16, 185, 129, 0.35); padding: 4px 10px; border-radius: var(--r-pill); display: inline-flex; align-items: center; gap: 5px;">
+            <span style="width: 7px; height: 7px; background: #10B981; border-radius: 50%; display: inline-block;"></span>
+            Store Online
+          </span>
+          <div style="display: flex; gap: 6px;">
+            <a href="account.html" style="font-size: 0.74rem; font-weight: 700; color: #FFFFFF; background: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.35); padding: 4px 10px; border-radius: var(--r-pill); text-decoration: none;">👤 Customer Mode</a>
+            <button id="btn-seller-logout" style="font-size: 0.74rem; font-weight: 700; color: #FEE2E2; background: rgba(220, 38, 38, 0.3); border: 1px solid rgba(220, 38, 38, 0.4); padding: 4px 10px; border-radius: var(--r-pill); cursor: pointer;">Sign Out</button>
+          </div>
+        </div>
+
+        <h2 id="seller-shop-name" style="font-size: 1.35rem; font-weight: 800; color: #FFFFFF; margin: 4px 0 2px;">Ramesh Electronics</h2>
+        <span class="seller-category-tag" id="seller-category-tag" style="background: rgba(255, 255, 255, 0.2); color: #FFFFFF; font-size: 0.74rem; font-weight: 700; padding: 2px 10px; border-radius: var(--r-pill); display: inline-block;">Electronics</span>
+        <p class="seller-address-text" id="seller-address-text" style="font-size: 0.78rem; color: rgba(255, 255, 255, 0.85); margin-top: 4px;">
+          📍 Main Road, Malkangiri, Odisha - 764045
+        </p>
+      </div>
+    </header>
+
+    <!-- Curved Main Content Sheet -->
+    <main class="curved-sheet-content">
+      <!-- Key Metrics Stats Grid -->
+      <section class="seller-stats-grid">
+        <div class="seller-stat-card">
+          <div class="seller-stat-num" id="stat-requests">12</div>
+          <div class="seller-stat-label">Inquiries</div>
+        </div>
+        <div class="seller-stat-card">
+          <div class="seller-stat-num" id="stat-reservations">7</div>
+          <div class="seller-stat-label">Reservations</div>
+        </div>
+        <div class="seller-stat-card">
+          <div class="seller-stat-num" id="stat-products">5</div>
+          <div class="seller-stat-label">Stock Items</div>
+        </div>
+      </section>
+
+      <!-- Segmented Tabs -->
+      <div class="seller-tabs">
+        <button class="seller-tab-btn active" data-tab="inventory">📦 Inventory</button>
+        <button class="seller-tab-btn" data-tab="requests">💬 Inquiries (12)</button>
+        <button class="seller-tab-btn" data-tab="reservations">📋 Reservations (7)</button>
+      </div>
+
+      <!-- Tab 1: Inventory Management -->
+      <section class="seller-tab-content active" id="tab-inventory">
+        <div class="add-product-bar" style="gap: 10px; flex-direction: column; align-items: stretch; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.88rem; font-weight: 800; color: var(--ink);">Stock & Products</span>
+            <button class="btn-add-prod" id="btn-add-product">+ Add Item</button>
+          </div>
+
+          <div class="quick-tools-grid">
+            <button class="btn-quick-tool" id="btn-scan-barcode">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="8" x2="7" y2="16"/><line x1="10" y1="8" x2="10" y2="16"/><line x1="14" y1="8" x2="14" y2="16"/><line x1="17" y1="8" x2="17" y2="16"/></svg>
+              <span>Scan Barcode</span>
+            </button>
+            <button class="btn-quick-tool" id="btn-photo-add">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              <span>Click Photo</span>
+            </button>
+            <button class="btn-quick-tool" id="btn-bulk-modal-open">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              <span>Bulk Excel</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="seller-products-list">
+          <!-- Populated dynamically from seller database -->
+        </div>
+      </section>
+
+      <!-- Tab 2: Customer Requests -->
+      <section class="seller-tab-content" id="tab-requests">
+        <div class="reservation-card" style="margin-bottom: 12px;">
+          <div class="reservation-header">
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--crimson);">💬 Buyer Inquiry</span>
+            <span class="status-pill confirmed">10 mins ago</span>
+          </div>
+          <h4 class="reservation-prod-name">"Do you have Type-C to Lightning 20W Cable in stock?"</h4>
+          <p style="font-size: 0.8rem; color: var(--ink-soft); margin: 6px 0 10px;">Customer located 0.6 km away (Daily Market)</p>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-primary btn-sm" style="flex: 1; padding: 8px 12px; font-size: 0.8rem;">✓ Yes, Available (₹199)</button>
+            <button class="btn-outline btn-sm" style="width: auto; padding: 8px 12px; font-size: 0.8rem;">Out of Stock</button>
+          </div>
+        </div>
+
+        <div class="reservation-card">
+          <div class="reservation-header">
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--crimson);">💬 Buyer Inquiry</span>
+            <span class="status-pill confirmed">35 mins ago</span>
+          </div>
+          <h4 class="reservation-prod-name">"Looking for 64GB High Speed MicroSD Card"</h4>
+          <p style="font-size: 0.8rem; color: var(--ink-soft); margin: 6px 0 10px;">Customer located 1.1 km away (College Road)</p>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-primary btn-sm" style="flex: 1; padding: 8px 12px; font-size: 0.8rem;">✓ Yes, Available (₹450)</button>
+            <button class="btn-outline btn-sm" style="width: auto; padding: 8px 12px; font-size: 0.8rem;">Out of Stock</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab 3: Customer Reservations -->
+      <section class="seller-tab-content" id="tab-reservations">
+        <div class="reservation-card" style="margin-bottom: 12px;">
+          <div class="reservation-header">
+            <span class="shop-badge">Customer: Aarav Sharma</span>
+            <span class="status-pill ready">Awaiting Pickup</span>
+          </div>
+          <h4 class="reservation-prod-name">Samsung 25W Fast Charger (₹799)</h4>
+          <div class="reservation-meta" style="margin: 6px 0 10px;">
+            <span>Qty: 1</span>
+            <span>OTP: <strong style="color: var(--crimson); font-size: 0.95rem;">#SK-8291</strong></span>
+          </div>
+          <button class="btn-primary btn-sm" style="width: 100%; padding: 10px; font-size: 0.82rem;">✓ Confirm Handover</button>
+        </div>
+
+        <div class="reservation-card">
+          <div class="reservation-header">
+            <span class="shop-badge">Customer: Sneha Patel</span>
+            <span class="status-pill ready">Awaiting Pickup</span>
+          </div>
+          <h4 class="reservation-prod-name">Wireless Mouse (₹450)</h4>
+          <div class="reservation-meta" style="margin: 6px 0 10px;">
+            <span>Qty: 1</span>
+            <span>OTP: <strong style="color: var(--crimson); font-size: 0.95rem;">#SK-3104</strong></span>
+          </div>
+          <button class="btn-primary btn-sm" style="width: 100%; padding: 10px; font-size: 0.82rem;">✓ Confirm Handover</button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Navigation (5 Tabs - Account Active) -->
+    <nav class="bottom-nav">
+      <a class="nav-item" href="index.html" id="nav-home">
+        <div class="nav-icon-container">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+        </div>
+        <span class="nav-label">Home</span>
+      </a>
+
+      <a class="nav-item" href="categories.html" id="nav-categories">
+        <div class="nav-icon-container">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1.5" />
+            <rect x="14" y="3" width="7" height="7" rx="1.5" />
+            <rect x="3" y="14" width="7" height="7" rx="1.5" />
+            <rect x="14" y="14" width="7" height="7" rx="1.5" />
+          </svg>
+        </div>
+        <span class="nav-label">Categories</span>
+      </a>
+
+      <a class="nav-item" href="cart.html" id="nav-cart">
+        <div class="nav-icon-container">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="9" cy="21" r="1" />
+            <circle cx="20" cy="21" r="1" />
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+          </svg>
+        </div>
+        <span class="nav-label">Cart</span>
+      </a>
+
+      <a class="nav-item" href="shops.html" id="nav-shops">
+        <div class="nav-icon-container">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l1-4h16l1 4" />
+            <path d="M3 9v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9" />
+            <path d="M9 21V13h6v8" />
+            <path d="M3 9h18" />
+          </svg>
+        </div>
+        <span class="nav-label">Shops</span>
+      </a>
+
+      <a class="nav-item active" href="account.html" id="nav-profile">
+        <div class="nav-icon-container">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+        </div>
+        <span class="nav-label">Account</span>
+      </a>
+    </nav>
+
+    <!-- Bulk Excel Upload Modal -->
+    <div class="modal-overlay" id="bulk-upload-modal">
+      <div class="modal-sheet" style="max-height: 85vh; overflow-y: auto;">
+        <div class="modal-handle"></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 class="modal-title" style="margin-bottom: 0;">Bulk Excel Import</h3>
+          <button id="close-bulk-modal-btn" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--ink-soft); padding: 4px;">✕</button>
+        </div>
+
+        <!-- Step 1: Download Template -->
+        <div class="bulk-step-card">
+          <div class="step-badge">Step 1</div>
+          <div style="flex: 1;">
+            <h4 style="font-size: 0.88rem; font-weight: 700; color: var(--ink);">Excel / CSV Template</h4>
+            <p style="font-size: 0.78rem; color: var(--ink-soft); margin-top: 2px;">Download sample format to easily fill in your store products.</p>
+          </div>
+          <button id="btn-download-template" class="btn-download-tpl">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download
+          </button>
+        </div>
+
+        <!-- Step 2: Upload File -->
+        <div class="bulk-step-card" style="margin-top: 12px; flex-direction: column; align-items: stretch;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <div class="step-badge">Step 2</div>
+            <h4 style="font-size: 0.88rem; font-weight: 700; color: var(--ink);">Upload Filled File</h4>
+          </div>
+          <label class="drop-zone" for="bulk-file-input">
+            <span style="font-size: 2rem; margin-bottom: 4px;">📊</span>
+            <span style="font-size: 0.84rem; font-weight: 700; color: var(--ink);" id="drop-zone-text">Tap to choose .csv or Excel file</span>
+            <span style="font-size: 0.72rem; color: var(--ink-mute);">Compatible with Excel (.csv, .xlsx)</span>
+            <input type="file" id="bulk-file-input" accept=".csv, .txt, .xlsx, .xls" style="display: none;" />
+          </label>
+        </div>
+
+        <!-- Preview Area -->
+        <div id="bulk-preview-area" style="display: none; margin-top: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 0.82rem; font-weight: 700; color: var(--ink);" id="preview-count">0 Products Detected</span>
+            <span style="font-size: 0.72rem; color: #10B981; font-weight: 700;">✓ Ready to Import</span>
+          </div>
+          <div id="preview-items-list" class="preview-table-wrap"></div>
+          <button id="btn-confirm-import" class="btn-submit" style="margin-top: 14px; background: var(--crimson);">Import All to Inventory</button>
+        </div>
+
+        <p id="bulk-status-msg" style="font-size: 0.8rem; text-align: center; margin-top: 12px; font-weight: 600;"></p>
+      </div>
+    </div>
+
+    <!-- Sample Scanner & Camera Photo Modal -->
+    <div class="modal-overlay" id="sample-scanner-modal">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h3 class="modal-title" id="scanner-modal-title" style="margin-bottom: 0;">Scan Barcode</h3>
+          <button id="close-scanner-modal-btn" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--ink-soft); padding: 4px;">✕</button>
+        </div>
+        <p style="font-size: 0.78rem; color: var(--ink-soft); margin-bottom: 12px;" id="scanner-modal-desc">
+          Point camera at the barcode/product box to auto-fetch details.
+        </p>
+
+        <!-- Simulated Viewfinder -->
+        <div class="scanner-viewfinder">
+          <div class="scanner-laser"></div>
+          <span style="font-size: 2.5rem; margin-bottom: 8px;" id="scanner-view-icon">🏷️</span>
+          <span style="font-size: 0.78rem; color: rgba(255, 255, 255, 0.8); font-weight: 600;" id="scanner-view-text">Align barcode within frame</span>
+        </div>
+
+        <div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: var(--r-md); padding: 12px; margin-bottom: 14px;">
+          <span style="font-size: 0.72rem; font-weight: 800; color: var(--crimson); text-transform: uppercase;">⚡ Simulated Demo Action</span>
+          <p style="font-size: 0.8rem; color: var(--ink); font-weight: 600; margin-top: 4px;" id="scanner-sample-prod-text">
+            Sample Detected: "Type-C Fast Charging Adapter 20W" (₹399)
+          </p>
+        </div>
+
+        <button id="btn-simulate-add" class="btn-submit" style="background: #111827;">
+          ✓ Simulate Scan & Add to Stock
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="app.js"></script>
+</body>
+
+</html>
