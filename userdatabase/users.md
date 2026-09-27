@@ -1,4 +1,4 @@
-# NearBuy – Sample User Login Information
+# SeekIt – Sample User Login Information
 
 > Dummy/test accounts for prototype or development use only. These are not real credentials.
 

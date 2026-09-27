@@ -711,6 +711,10 @@ function setCurrentSeller(seller) {
   localStorage.setItem('seekit_seller', JSON.stringify(seller));
 }
 
+function clearCurrentSeller() {
+  localStorage.removeItem('seekit_seller');
+}
+
 // User Cart Management (Synced to Logged-in Profile)
 function getUserCart() {
   const user = getCurrentUser();
@@ -732,31 +736,79 @@ function setUserCart(cart) {
 
 function updateCartBadge() {
   const cartNavLabel = document.querySelector('#nav-cart .nav-label');
+  const topCartBadge = document.getElementById('top-cart-badge');
+  const user = getCurrentUser();
+  const cart = getUserCart();
+  const totalCount = cart.reduce((acc, item) => acc + (item.qty || 1), 0);
+
   if (cartNavLabel) {
-    const user = getCurrentUser();
     if (user) {
-      const cart = getUserCart();
-      const totalCount = cart.reduce((acc, item) => acc + (item.qty || 1), 0);
       cartNavLabel.textContent = totalCount > 0 ? `Cart (${totalCount})` : 'Cart';
     } else {
       cartNavLabel.textContent = 'Cart';
     }
   }
+
+  if (topCartBadge) {
+    if (user && totalCount > 0) {
+      topCartBadge.textContent = totalCount;
+      topCartBadge.style.display = 'inline-flex';
+    } else {
+      topCartBadge.style.display = 'none';
+    }
+  }
 }
 
-// ===== Universal User Reservations Helpers =====
+// ===== Universal User Reservations Helpers (Scoped to Active Profile) =====
+function getReservationStorageKey() {
+  const user = getCurrentUser();
+  return user ? `seekit_user_reservations_${user.id}` : 'seekit_user_reservations_guest';
+}
+
 function getUserReservations() {
   try {
-    return JSON.parse(localStorage.getItem('seekit_user_reservations') || '[]');
+    const key = getReservationStorageKey();
+    const data = localStorage.getItem(key);
+    // Backward compatibility: migrate un-scoped reservations if present
+    if (!data) {
+      const legacy = localStorage.getItem('seekit_user_reservations');
+      if (legacy) {
+        localStorage.setItem(key, legacy);
+        localStorage.removeItem('seekit_user_reservations');
+        return JSON.parse(legacy);
+      }
+    }
+    return data ? JSON.parse(data) : [];
   } catch (e) {
     return [];
   }
 }
 
+function updateReservationBadge() {
+  const topReservedBadge = document.getElementById('top-reserved-badge');
+  const reservations = getUserReservations();
+
+  if (topReservedBadge) {
+    if (reservations && reservations.length > 0) {
+      topReservedBadge.textContent = reservations.length;
+      topReservedBadge.style.display = 'inline-flex';
+    } else {
+      topReservedBadge.style.display = 'none';
+    }
+  }
+}
+
 function setUserReservations(reservations) {
-  localStorage.setItem('seekit_user_reservations', JSON.stringify(reservations));
+  const key = getReservationStorageKey();
+  localStorage.setItem(key, JSON.stringify(reservations));
   if (typeof renderAccountReservations === 'function') {
     renderAccountReservations();
+  }
+  if (typeof renderReservedProductsPage === 'function') {
+    renderReservedProductsPage();
+  }
+  if (typeof updateReservationBadge === 'function') {
+    updateReservationBadge();
   }
 }
 
@@ -767,8 +819,109 @@ function cancelReservation(reservationId) {
     const cancelled = reservations.splice(index, 1)[0];
     setUserReservations(reservations);
     showToast(`🗑️ Cancelled reservation for <strong>${cancelled.productName}</strong>`);
-    renderAccountReservations();
+    if (typeof renderAccountReservations === 'function') renderAccountReservations();
+    if (typeof renderReservedProductsPage === 'function') renderReservedProductsPage();
+    if (typeof updateReservationBadge === 'function') updateReservationBadge();
   }
+}
+
+function renderReservedProductsPage() {
+  const container = document.getElementById('reserved-products-page-list');
+  const countLabel = document.getElementById('reserved-count-label');
+  if (!container) return;
+
+  const reservations = getUserReservations();
+
+  if (countLabel) {
+    countLabel.textContent = reservations.length === 1 ? '1 item held for store pickup' : `${reservations.length} items held for store pickup`;
+  }
+
+  if (reservations.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 44px 16px; background: var(--surface); border-radius: var(--r-xl); border: 1px dashed var(--border-strong);">
+        <p style="font-size: 2.8rem; margin-bottom: 10px;">📋</p>
+        <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--ink); margin-bottom: 6px;">No Reserved Products</h3>
+        <p style="font-size: 0.84rem; color: var(--ink-soft); margin-bottom: 22px; max-width: 280px; margin-left: auto; margin-right: auto; line-height: 1.45;">
+          You don't have any items reserved right now. Browse nearby stores and reserve products before visiting.
+        </p>
+        <a href="index.html" class="btn-primary" style="display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0 24px; text-decoration: none; border-radius: var(--r-md); font-weight: 700; font-size: 0.9rem;">
+          Explore Nearby Products
+        </a>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = `
+    <div style="margin-bottom: 14px; background: rgba(225, 29, 72, 0.05); border: 1px solid rgba(225, 29, 72, 0.15); border-radius: var(--r-md); padding: 12px 14px; display: flex; align-items: center; gap: 10px;">
+      <span style="font-size: 1.3rem;">ℹ️</span>
+      <p style="font-size: 0.78rem; color: var(--ink-secondary); line-height: 1.35; margin: 0;">
+        Show your <strong>Pickup OTP</strong> at the store counter. Stores hold reserved items for <strong>2 hours</strong>.
+      </p>
+    </div>
+    <div class="reservations-list">
+      ${reservations.map(res => {
+        const timeStr = res.date || ('Today, ' + new Date(res.id).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+        return `
+          <div class="reservation-card fade-in" data-res-id="${res.id}">
+            <div class="reservation-header">
+              <span class="shop-badge" style="font-weight: 700; color: var(--ink); display: inline-flex; align-items: center; gap: 5px;">
+                🏪 ${res.shopName}
+              </span>
+              <span class="status-pill ready">Ready for Pickup</span>
+            </div>
+            
+            <div class="reservation-body">
+              <h4 class="reservation-prod-name" style="font-size: 1.05rem; font-weight: 800; color: var(--ink); margin-bottom: 6px;">${res.productName}</h4>
+              <div class="reservation-meta" style="display: flex; align-items: center; gap: 10px; font-size: 0.84rem; color: var(--ink-soft); margin-bottom: 10px;">
+                <span style="font-weight: 800; color: var(--crimson); font-size: 1.05rem;">₹${res.price}</span>
+                <span>·</span>
+                <span class="reservation-qty">Qty: ${res.qty || 1}</span>
+                <span>·</span>
+                <span class="reservation-date">⏱️ ${timeStr}</span>
+              </div>
+            </div>
+
+            <!-- OTP Highlight Box -->
+            <div style="background: var(--paper-soft); border: 1px solid var(--border-strong); border-radius: var(--r-sm); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div>
+                <span style="font-size: 0.7rem; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.05em; display: block;">Store Handover Code</span>
+                <span style="font-family: 'Space Grotesk', monospace; font-size: 1.15rem; font-weight: 800; color: var(--crimson); letter-spacing: 0.04em;">${res.code}</span>
+              </div>
+              <span style="font-size: 0.72rem; font-weight: 700; color: var(--leaf); background: var(--leaf-wash); padding: 4px 8px; border-radius: var(--r-xs); border: 1px solid var(--leaf-border);">✓ Confirmed</span>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-outline btn-call-shop" data-shop="${res.shopName}" style="flex: 1; height: 38px; font-size: 0.8rem; padding: 0 10px;">
+                📞 Call Shop
+              </button>
+              <button class="btn-outline btn-cancel-res-item" data-res-id="${res.id}" data-name="${res.productName}" style="flex: 1; height: 38px; font-size: 0.8rem; padding: 0 10px; color: var(--crimson); border-color: rgba(225, 29, 72, 0.25);">
+                ✕ Cancel
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+
+  // Attach button events
+  container.querySelectorAll('.btn-call-shop').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const shop = e.currentTarget.dataset.shop;
+      showToast(`📞 Dialing store phone for <strong>${shop}</strong>...`);
+    });
+  });
+
+  container.querySelectorAll('.btn-cancel-res-item').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = parseInt(e.currentTarget.dataset.resId);
+      const name = e.currentTarget.dataset.name;
+      if (confirm(`Are you sure you want to cancel the reservation for "${name}"?`)) {
+        cancelReservation(id);
+      }
+    });
+  });
 }
 
 function renderAccountReservations() {
@@ -866,8 +1019,9 @@ function addToUserCart(product) {
   const user = getCurrentUser();
   if (!user) {
     showToast('🔒 Please sign in to add items to your cart');
+    const currentPage = encodeURIComponent(window.location.pathname.split('/').pop() || 'index.html');
     setTimeout(() => {
-      window.location.href = 'login.html';
+      window.location.href = `login.html?redirect=${currentPage}`;
     }, 1000);
     return false;
   }
@@ -1353,6 +1507,14 @@ function openShopProfileModal(shopIdentifier) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Immediate reservation badge & reserved page rendering
+  if (typeof updateReservationBadge === 'function') {
+    updateReservationBadge();
+  }
+  if (document.getElementById('reserved-products-page-list')) {
+    renderReservedProductsPage();
+  }
+
   // ===== 1. Location Modal (Home Page) =====
   const locationBtn = document.getElementById('location-btn');
   const locationModal = document.getElementById('location-modal');
@@ -1441,7 +1603,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  if (fetchLocationBtn && locationStatus && locationText) {
+  if (fetchLocationBtn && locationStatus) {
     fetchLocationBtn.addEventListener('click', () => {
       if (!navigator.geolocation) {
         locationStatus.textContent = '❌ Geolocation is not supported by your browser.';
@@ -1490,7 +1652,7 @@ document.addEventListener('DOMContentLoaded', () => {
               placeName = state ? `${city}, ${state}` : (city || 'Current Location');
             }
 
-            locationText.textContent = placeName;
+            if (locationText) locationText.textContent = placeName;
             localStorage.setItem('seekit_location', placeName);
             const shopsLoc = document.getElementById('shops-location-text');
             if (shopsLoc) shopsLoc.textContent = `📍 ${placeName}`;
@@ -1506,7 +1668,7 @@ document.addEventListener('DOMContentLoaded', () => {
           } catch (err) {
             // Coordinate fallback
             const displayCoord = `${latitude.toFixed(2)}°N, ${longitude.toFixed(2)}°E`;
-            locationText.textContent = displayCoord;
+            if (locationText) locationText.textContent = displayCoord;
             localStorage.setItem('seekit_location', displayCoord);
             const shopsLoc = document.getElementById('shops-location-text');
             if (shopsLoc) shopsLoc.textContent = `📍 ${displayCoord}`;
@@ -1555,7 +1717,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!placeName) placeName = 'Malkangiri, Odisha - 764045';
 
-            locationText.textContent = placeName;
+            if (locationText) locationText.textContent = placeName;
             localStorage.setItem('seekit_location', placeName);
             const shopsLoc = document.getElementById('shops-location-text');
             if (shopsLoc) shopsLoc.textContent = `📍 ${placeName}`;
@@ -1883,7 +2045,7 @@ function isMalkangiriLocation(locationStr) {
       cartCountLabel.textContent = `${totalItemsCount} ${totalItemsCount === 1 ? 'item' : 'items'}`;
     }
 
-    const savedLoc = localStorage.getItem('seekit_location') || 'Koraput, Odisha 764020';
+    const savedLoc = localStorage.getItem('seekit_location') || 'Malkangiri, Odisha - 764045';
     const deliveryFee = 15;
     const finalTotal = subtotal + deliveryFee;
 
@@ -2705,8 +2867,11 @@ function isMalkangiriLocation(locationStr) {
         email: user.email
       });
 
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectTarget = urlParams.get('redirect') || 'account.html';
+
       setTimeout(() => {
-        window.location.href = 'account.html';
+        window.location.href = redirectTarget;
       }, 700);
     });
   }
@@ -3279,77 +3444,664 @@ function isMalkangiriLocation(locationStr) {
         }
       });
     }
+  }
 
-    // ===== Ask Modal & Filter Modal Handlers =====
-    const askModal = document.getElementById('ask-modal');
-    const btnOpenAsk = document.getElementById('btn-open-ask-modal');
-    const navAsk = document.getElementById('nav-ask');
-    const btnSubmitAsk = document.getElementById('btn-submit-ask');
-    const askProdInput = document.getElementById('ask-product-name');
+  // ===== Ask Modal & Filter Modal Handlers =====
+  const askModal = document.getElementById('ask-modal');
+  const btnOpenAsk = document.getElementById('btn-open-ask-modal');
+  const navAsk = document.getElementById('nav-ask');
+  const btnSubmitAsk = document.getElementById('btn-submit-ask');
+  const askProdInput = document.getElementById('ask-product-name');
 
-    if (btnOpenAsk && askModal) {
-      btnOpenAsk.addEventListener('click', () => {
-        askModal.classList.add('active');
-        if (askProdInput) askProdInput.focus();
-      });
+  if (btnOpenAsk && askModal) {
+    btnOpenAsk.addEventListener('click', () => {
+      askModal.classList.add('active');
+      if (askProdInput) askProdInput.focus();
+    });
+  }
+
+  if (navAsk && askModal) {
+    navAsk.addEventListener('click', (e) => {
+      e.preventDefault();
+      askModal.classList.add('active');
+      if (askProdInput) askProdInput.focus();
+    });
+  }
+
+  if (btnSubmitAsk && askModal) {
+    btnSubmitAsk.addEventListener('click', () => {
+      const prod = askProdInput ? askProdInput.value.trim() : '';
+      if (!prod) {
+        showToast('⚠️ Please enter an item name to ask shops.');
+        return;
+      }
+      btnSubmitAsk.disabled = true;
+      btnSubmitAsk.textContent = '📡 Broadcasting to 8 nearby shops...';
+      setTimeout(() => {
+        btnSubmitAsk.disabled = false;
+        btnSubmitAsk.textContent = 'Broadcast to Nearby Shops';
+        askModal.classList.remove('active');
+        if (askProdInput) askProdInput.value = '';
+        showToast(`✅ Request sent to 8 nearby shops for <strong>${prod}</strong>!`);
+      }, 1200);
+    });
+  }
+
+  if (askModal) {
+    askModal.addEventListener('click', (e) => {
+      if (e.target === askModal) askModal.classList.remove('active');
+    });
+  }
+
+  // Filter Modal for shops.html
+  const filterModal = document.getElementById('filter-modal');
+  const btnShopsFilter = document.getElementById('btn-shops-filter');
+  const btnApplyFilters = document.getElementById('btn-apply-filters');
+
+  if (btnShopsFilter && filterModal) {
+    btnShopsFilter.addEventListener('click', () => {
+      filterModal.classList.add('active');
+    });
+  }
+
+  if (filterModal) {
+    filterModal.addEventListener('click', (e) => {
+      if (e.target === filterModal) filterModal.classList.remove('active');
+    });
+  }
+
+  if (btnApplyFilters && filterModal) {
+    btnApplyFilters.addEventListener('click', () => {
+      filterModal.classList.remove('active');
+      renderShopsPage();
+      showToast('✓ Filters applied successfully');
+    });
+  }
+
+  // ===== HYPERLOCAL MARKETPLACE (Malkangiri District Villages < 30 km) =====
+  const HYPERLOCAL_DB = [
+    {
+      id: 801,
+      name: "Homemade Malkangiri Green Mango Pickle (500g)",
+      category: "Pickles & Chutneys",
+      village: "MV-79 Village",
+      distanceKm: 8.2,
+      distance: "8.2 km",
+      maker: "Anjali Mandal",
+      price: 120,
+      deliveryMode: "🛵 Village Delivery & 🏪 Self Pickup",
+      deliveryType: "both",
+      stock: 15,
+      available: true,
+      icon: "🥒",
+      iconBg: "#ECFDF5",
+      iconBorder: "#A7F3D0",
+      desc: "Authentic spicy raw mango pickle cured in cold-pressed mustard oil with grandma's roasted panch phoron spices."
+    },
+    {
+      id: 802,
+      name: "High-Protein Floating Fish Feed Pellets (5kg)",
+      category: "Aquaculture & Fish Feed",
+      village: "Potteru Rural Hamlet",
+      distanceKm: 14.5,
+      distance: "14.5 km",
+      maker: "Bikram Halder",
+      price: 340,
+      deliveryMode: "🛵 Village Delivery & 🏪 Self Pickup",
+      deliveryType: "both",
+      stock: 24,
+      available: true,
+      icon: "🐟",
+      iconBg: "#EFF6FF",
+      iconBorder: "#BFDBFE",
+      desc: "Farm-grade floating feed pellets enriched with roasted soya meal and dried freshwater shrimp for pond Rohu, Catla, and Tilapia."
+    },
+    {
+      id: 803,
+      name: "Pure Hand-Fluffed Semul Cotton Pillow (Simili Tula)",
+      category: "Bedding & Pillows",
+      village: "MV-26 Village",
+      distanceKm: 6.5,
+      distance: "6.5 km",
+      maker: "Laxmi Biswas",
+      price: 280,
+      deliveryMode: "🏪 Self Pickup & 🛵 Village Delivery",
+      deliveryType: "both",
+      stock: 12,
+      available: true,
+      icon: "🛏️",
+      iconBg: "#FAF5FF",
+      iconBorder: "#E9D5FF",
+      desc: "Naturally cooling hypoallergenic pillow stuffed with 1.2 kg of hand-cleaned natural silk cotton harvested from Malkangiri red cotton trees."
+    },
+    {
+      id: 804,
+      name: "Handmade Earthen Clay Cooking Handi with Lid (2.5L)",
+      category: "Clay Pottery & Cookware",
+      village: "Padmagiri Village",
+      distanceKm: 11.2,
+      distance: "11.2 km",
+      maker: "Sanatan Kumbhar",
+      price: 190,
+      deliveryMode: "🏪 Self Pickup & 🛵 Village Delivery",
+      deliveryType: "both",
+      stock: 14,
+      available: true,
+      icon: "🏺",
+      iconBg: "#FFF7ED",
+      iconBorder: "#FED7AA",
+      desc: "Traditional wheel-thrown red clay pot seasoned with rice starch. Retains nutrients and gives aromatic earthy flavor to curries and dal."
+    },
+    {
+      id: 805,
+      name: "Handwoven Bamboo Winnowing Fan & Basket Set (Kula & Dala)",
+      category: "Bamboo & Cane Crafts",
+      village: "Sikhapalli Gram",
+      distanceKm: 9.8,
+      distance: "9.8 km",
+      maker: "Budhram Majhi",
+      price: 220,
+      deliveryMode: "🛵 Village Delivery & 🏪 Self Pickup",
+      deliveryType: "both",
+      stock: 16,
+      available: true,
+      icon: "🧺",
+      iconBg: "#FEFCE8",
+      iconBorder: "#FEF08A",
+      desc: "Tight-weave sturdy native bamboo winnower (Kula) and deep storage basket (Dala) handcrafted from treated forest green bamboo."
+    },
+    {
+      id: 806,
+      name: "Pure Desi Cow Bilona Ghee (500ml Glass Jar)",
+      category: "Desi Dairy & Ghee",
+      village: "Mathili Tribal Belt",
+      distanceKm: 28.5,
+      distance: "28.5 km",
+      maker: "Ratan Dora",
+      price: 580,
+      deliveryMode: "🛵 Village Delivery & 🏪 Self Pickup",
+      deliveryType: "both",
+      stock: 10,
+      available: true,
+      icon: "🧈",
+      iconBg: "#FEF3C7",
+      iconBorder: "#FDE68A",
+      desc: "Authentic earthen-pot bilona churned curd ghee from indigenous free-grazing cows in Mathili valley. Granular golden texture and rich aroma."
+    },
+    {
+      id: 807,
+      name: "Wild Forest Raw Rock Honey (500g Glass Jar)",
+      category: "Forest Honey",
+      village: "Tandiki Forest Hamlet",
+      distanceKm: 21.0,
+      distance: "21.0 km",
+      maker: "Raju Murmu",
+      price: 320,
+      deliveryMode: "🛵 Village Delivery (Within 24h)",
+      deliveryType: "delivery",
+      stock: 18,
+      available: true,
+      icon: "🍯",
+      iconBg: "#FFFBEB",
+      iconBorder: "#FDE68A",
+      desc: "100% pure multifloral wild rock bee honey sustainably extracted from deep teak and sal forest canopy. Unprocessed and unpasteurized."
+    },
+    {
+      id: 808,
+      name: "Hand-Rolled Spiced Urad Dal Phula Badi (400g Pouch)",
+      category: "Sun-Dried Badi & Papad",
+      village: "MV-19 Farm Colony",
+      distanceKm: 7.5,
+      distance: "7.5 km",
+      maker: "Purnima Halder",
+      price: 110,
+      deliveryMode: "🛵 Village Delivery & 🏪 Self Pickup",
+      deliveryType: "both",
+      stock: 25,
+      available: true,
+      icon: "🥟",
+      iconBg: "#FDF2F8",
+      iconBorder: "#FBCFE8",
+      desc: "Light, airy sun-dried black gram lentil nuggets whipped by hand with cumin and black pepper. Crisps golden-brown upon shallow frying."
+    },
+    {
+      id: 809,
+      name: "Wood-Pressed Cold Pure Mahua & Neem Body & Hair Oil (250ml)",
+      category: "Herbal Oils & Care",
+      village: "MV-42 Hamlet",
+      distanceKm: 17.6,
+      distance: "17.6 km",
+      maker: "Kamala Gouda",
+      price: 160,
+      deliveryMode: "🛵 Village Delivery & 🏪 Self Pickup",
+      deliveryType: "both",
+      stock: 20,
+      available: true,
+      icon: "🌿",
+      iconBg: "#F0FDF4",
+      iconBorder: "#BBF7D0",
+      desc: "Cold expeller pressed native Mahua flower seed and wild neem seed oil. Traditional remedy for dry skin, scalp dandruff, and muscle fatigue."
+    },
+    {
+      id: 810,
+      name: "Pure Cotton Handloom Village Bath Towel / Gamucha (Pack of 2)",
+      category: "Handloom Weaving",
+      village: "Kalimela Road Hamlet",
+      distanceKm: 19.8,
+      distance: "19.8 km",
+      maker: "Subash Tanti",
+      price: 210,
+      deliveryMode: "🛵 Village Delivery & 🏪 Self Pickup",
+      deliveryType: "both",
+      stock: 15,
+      available: true,
+      icon: "🧵",
+      iconBg: "#EFF6FF",
+      iconBorder: "#BFDBFE",
+      desc: "100% unbleached absorbent soft cotton village handloom weave with checked red and white borders. Quick-drying and skin-friendly."
+    },
+    {
+      id: 811,
+      name: "Hand-Forged Carbon Steel Village Sickle & Curved Knife (Daasi)",
+      category: "Hand-Forged Tools",
+      village: "Balimela Outskirts",
+      distanceKm: 22.3,
+      distance: "22.3 km",
+      maker: "Mangala Kamar",
+      price: 240,
+      deliveryMode: "🏪 Self Pickup Only",
+      deliveryType: "pickup",
+      stock: 11,
+      available: true,
+      icon: "🔪",
+      iconBg: "#F3F4F6",
+      iconBorder: "#E5E7EB",
+      desc: "Heavy-duty recycled railway carbon steel sickle hand-beaten on anvil with a carved Sal wood handle. Razor-sharp edge for grass and crops."
+    },
+    {
+      id: 812,
+      name: "Organic Stone-Ground Finger Millet Flour (Mandia / Ragi - 2kg)",
+      category: "Millets & Flours",
+      village: "Bhejangiwada Gram",
+      distanceKm: 26.8,
+      distance: "26.8 km",
+      maker: "Arjun Madhi",
+      price: 130,
+      deliveryMode: "🛵 Village Delivery & 🏪 Self Pickup",
+      deliveryType: "both",
+      stock: 30,
+      available: true,
+      icon: "🌾",
+      iconBg: "#FEF3C7",
+      iconBorder: "#FDE68A",
+      desc: "High-calcium native tribal Mandia millet ground slowly in stone flour chakkis to preserve dietary fiber. Ideal for healthy morning porridge and roti."
+    },
+    {
+      id: 813,
+      name: "Desi Cow Dung & Forest Loban Natural Dhoop Cones (Pack of 30)",
+      category: "Natural Incense & Dhoop",
+      village: "Korkunda Village",
+      distanceKm: 12.0,
+      distance: "12.0 km",
+      maker: "Basanti Nayak",
+      price: 95,
+      deliveryMode: "🛵 Village Delivery & 🏪 Self Pickup",
+      deliveryType: "both",
+      stock: 40,
+      available: true,
+      icon: "🪔",
+      iconBg: "#FFF1F2",
+      iconBorder: "#FECDD3",
+      desc: "Charcoal-free aromatic prayer dhoop cones pressed from indigenous cow dung, natural tree gum (Jhuna/Guggul), and crushed camphor."
+    },
+    {
+      id: 814,
+      name: "Handmade Organic Sugarcane Solid Jaggery Blocks (Desi Guda - 1kg)",
+      category: "Traditional Sweets & Jaggery",
+      village: "Malkangiri Sadar Rural",
+      distanceKm: 4.2,
+      distance: "4.2 km",
+      maker: "Bipin Nayak",
+      price: 85,
+      deliveryMode: "🛵 Instant Village Delivery",
+      deliveryType: "delivery",
+      stock: 35,
+      available: true,
+      icon: "🍯",
+      iconBg: "#FFFBEB",
+      iconBorder: "#FDE68A",
+      desc: "Unrefined iron-rich country jaggery boiled over fire furnaces from local sugarcane juice with natural okro mucilage clarifier. Zero chemicals."
+    },
+    {
+      id: 815,
+      name: "Native Heirloom Vegetable Garden Seeds Kit (6 Desi Varieties)",
+      category: "Heirloom Seeds & Plants",
+      village: "MV-79 Village",
+      distanceKm: 8.2,
+      distance: "8.2 km",
+      maker: "Dhiren Biswas",
+      price: 150,
+      deliveryMode: "🛵 Village Delivery & 🏪 Self Pickup",
+      deliveryType: "both",
+      stock: 22,
+      available: true,
+      icon: "🌱",
+      iconBg: "#ECFDF5",
+      iconBorder: "#A7F3D0",
+      desc: "Open-pollinated native seed packets: Malkangiri green chilli, small native brinjal, ridge gourd, ash gourd, country tomato, and cluster beans."
+    },
+    {
+      id: 816,
+      name: "Handwoven Wild River Grass Sleeping Mat (Chatai - 6x3 ft)",
+      category: "Grass Crafts & Mats",
+      village: "Chitrakonda Ghat Village",
+      distanceKm: 24.0,
+      distance: "24.0 km",
+      maker: "Subhadra Poddar",
+      price: 260,
+      deliveryMode: "🏪 Self Pickup & 🛵 Village Delivery",
+      deliveryType: "both",
+      stock: 9,
+      available: true,
+      icon: "🎋",
+      iconBg: "#F0FDF4",
+      iconBorder: "#BBF7D0",
+      desc: "Rollable natural cooling floor mat woven from wild river sedge reeds with strong cotton warp threads. Naturally repels ground heat."
+    },
+    {
+      id: 817,
+      name: "Tender Bamboo Shoot Pickle (Karadi Achar - 400g Jar)",
+      category: "Tribal Forest Food",
+      village: "Pandripani Village",
+      distanceKm: 16.4,
+      distance: "16.4 km",
+      maker: "Sumitra Hembram",
+      price: 150,
+      deliveryMode: "🛵 Village Delivery & 🏪 Self Pickup",
+      deliveryType: "both",
+      stock: 17,
+      available: true,
+      icon: "🎍",
+      iconBg: "#FEFCE8",
+      iconBorder: "#FEF08A",
+      desc: "Tender mountain bamboo shoots shredded and naturally fermented in raw mustard paste, turmeric, and local bird's eye chillies."
+    },
+    {
+      id: 818,
+      name: "Malkangiri Cleaned Sun-Dried River Fish (Sukhua - 250g)",
+      category: "Sun-Dried River Fish",
+      village: "Chitrakonda Ghat Village",
+      distanceKm: 24.0,
+      distance: "24.0 km",
+      maker: "Gouranga Mondal",
+      price: 160,
+      deliveryMode: "🛵 Village Delivery & 🏪 Self Pickup",
+      deliveryType: "both",
+      stock: 20,
+      available: true,
+      icon: "🐟",
+      iconBg: "#EFF6FF",
+      iconBorder: "#BFDBFE",
+      desc: "Freshwater river catch sun-cured with rock salt on riverbank drying mats. Cleaned, de-scaled, odor-sealed, and ready for village curry."
+    }
+  ];
+
+  function renderHyperlocalPage() {
+    const grid = document.getElementById('hyperlocal-products-grid');
+    if (!grid) return;
+
+    const searchInput = document.getElementById('hyperlocal-search-input');
+    const countLabel = document.getElementById('hyperlocal-feed-count');
+    const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+    let filtered = HYPERLOCAL_DB.filter(item => {
+      // Strictly keep distance under 30 km
+      if (item.distanceKm > 30) return false;
+
+      // Search query match
+      if (query) {
+        const match = item.name.toLowerCase().includes(query) ||
+                      item.village.toLowerCase().includes(query) ||
+                      item.maker.toLowerCase().includes(query) ||
+                      item.category.toLowerCase().includes(query) ||
+                      item.desc.toLowerCase().includes(query);
+        if (!match) return false;
+      }
+
+      return true;
+    });
+
+    if (countLabel) {
+      countLabel.textContent = `${filtered.length} Product${filtered.length === 1 ? '' : 's'}`;
     }
 
-    if (navAsk && askModal) {
-      navAsk.addEventListener('click', (e) => {
-        e.preventDefault();
-        askModal.classList.add('active');
-        if (askProdInput) askProdInput.focus();
-      });
+    if (filtered.length === 0) {
+      grid.innerHTML = `
+        <div class="no-products-msg" style="padding: 30px 16px; text-align: center;">
+          <span style="font-size: 2.2rem; display: block; margin-bottom: 8px;">🌾</span>
+          <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--ink);">No village products match your search</h4>
+          <p style="font-size: 0.8rem; color: #6B7280; margin: 4px 0 14px;">Try searching for pickles, fish food, pillows, or clear the search.</p>
+          <button id="btn-reset-hyperlocal" class="btn-submit" style="max-width: 200px; margin: 0 auto; padding: 7px 16px; font-size: 0.8rem; background: var(--crimson);">
+            View All Products
+          </button>
+        </div>
+      `;
+      const resetBtn = document.getElementById('btn-reset-hyperlocal');
+      if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+          if (searchInput) searchInput.value = '';
+          renderHyperlocalPage();
+        });
+      }
+      return;
     }
 
-    if (btnSubmitAsk && askModal) {
-      btnSubmitAsk.addEventListener('click', () => {
-        const prod = askProdInput ? askProdInput.value.trim() : '';
-        if (!prod) {
-          showToast('⚠️ Please enter an item name to ask shops.');
-          return;
+    const userCart = getUserCart();
+
+    grid.innerHTML = filtered.map(item => {
+      const isInCart = userCart.some(c => c.id === item.id && c.shopName === item.village);
+      const isPickupOnly = item.deliveryType === 'pickup';
+
+      return `
+        <div class="hyperlocal-product-card fade-in" data-id="${item.id}">
+          <!-- Top Row: Icon + Title + Price -->
+          <div style="display: flex; gap: 9px; align-items: flex-start;">
+            <div style="width: 44px; height: 44px; border-radius: 8px; background: ${item.iconBg}; border: 1px solid ${item.iconBorder}; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;">
+              ${item.icon}
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 6px;">
+                <h4 style="font-size: 0.86rem; font-weight: 700; color: var(--ink); line-height: 1.25; margin: 0;">${item.name}</h4>
+                <span style="font-size: 0.95rem; font-weight: 800; color: var(--crimson); flex-shrink: 0;">₹${item.price}</span>
+              </div>
+              <div class="hyperlocal-maker-row" style="margin-top: 3px;">
+                <span class="hyperlocal-village-badge">
+                  📍 ${item.village}
+                </span>
+                <span class="hyperlocal-distance-badge">
+                  ⚡ ${item.distance}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Description snippet -->
+          <p class="hyperlocal-desc">${item.desc}</p>
+
+          <!-- Delivery & Maker Row -->
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 2px;">
+            <span class="hyperlocal-delivery-tag ${isPickupOnly ? 'pickup-only' : ''}">
+              ${item.deliveryMode}
+            </span>
+            <span style="font-size: 0.7rem; color: #4B5563; font-weight: 600;">
+              Maker: <strong>${item.maker}</strong>
+            </span>
+          </div>
+
+          <!-- Action Buttons Footer -->
+          <div class="home-prod-footer" style="margin-top: 4px; padding-top: 6px;">
+            <button class="btn-hyperlocal-call" data-maker="${item.maker}" data-village="${item.village}" title="Call ${item.maker}">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+              </svg>
+              Call
+            </button>
+
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <button class="btn-cart-icon-action ${isInCart ? 'in-cart' : ''}" 
+                      data-id="${item.id}" 
+                      data-shop="${item.village}" 
+                      data-name="${item.name}" 
+                      data-price="${item.price}" 
+                      data-image="logo.webp"
+                      title="${isInCart ? 'In Cart (Tap to Remove)' : 'Add to Cart'}">
+                ${isInCart ? `
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                ` : `
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="9" cy="21" r="1"/>
+                    <circle cx="20" cy="21" r="1"/>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                  </svg>
+                `}
+              </button>
+              <button class="btn-reserve-item" 
+                      data-id="${item.id}" 
+                      data-shop="${item.village} (${item.maker})" 
+                      data-name="${item.name}" 
+                      data-price="${item.price}">
+                Reserve
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Attach Call button listeners (Demo action consistent with SeekIt prototype)
+    grid.querySelectorAll('.btn-hyperlocal-call').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const maker = e.currentTarget.dataset.maker;
+        const village = e.currentTarget.dataset.village;
+        showToast(`📞 Connecting call to <strong>${maker}</strong> (${village} - Demo)...`);
+      });
+    });
+
+    // Attach Cart button listeners
+    grid.querySelectorAll('.btn-cart-icon-action').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const targetBtn = e.currentTarget;
+        const id = parseInt(targetBtn.dataset.id);
+        const name = targetBtn.dataset.name;
+        const shopName = targetBtn.dataset.shop;
+        const price = parseInt(targetBtn.dataset.price);
+        const image = targetBtn.dataset.image;
+
+        const isCurrentlyInCart = targetBtn.classList.contains('in-cart');
+
+        if (isCurrentlyInCart) {
+          removeFromUserCart(id, shopName);
+          targetBtn.classList.remove('in-cart');
+          targetBtn.title = 'Add to Cart';
+          targetBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="9" cy="21" r="1"/>
+              <circle cx="20" cy="21" r="1"/>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+          `;
+        } else {
+          const success = addToUserCart({ id, name, shopName, price, image });
+          if (success) {
+            targetBtn.classList.add('in-cart');
+            targetBtn.title = 'In Cart (Tap to Remove)';
+            targetBtn.innerHTML = `
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            `;
+          }
         }
-        btnSubmitAsk.disabled = true;
-        btnSubmitAsk.textContent = '📡 Broadcasting to 8 nearby shops...';
-        setTimeout(() => {
-          btnSubmitAsk.disabled = false;
-          btnSubmitAsk.textContent = 'Broadcast to Nearby Shops';
-          askModal.classList.remove('active');
-          if (askProdInput) askProdInput.value = '';
-          showToast(`✅ Request sent to 8 nearby shops for <strong>${prod}</strong>!`);
-        }, 1200);
+      });
+    });
+
+    // Attach Reserve button listeners
+    grid.querySelectorAll('.btn-reserve-item').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const prodName = e.target.dataset.name;
+        const shopName = e.target.dataset.shop;
+        const price = e.target.dataset.price;
+        const otp = '#SK-' + Math.floor(1000 + Math.random() * 9000);
+
+        const userReservations = getUserReservations();
+        userReservations.unshift({
+          id: Date.now(),
+          productName: prodName,
+          shopName: shopName,
+          price: price,
+          qty: 1,
+          code: otp,
+          status: 'Confirmed',
+          date: 'Today, ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        });
+        setUserReservations(userReservations);
+
+        e.target.textContent = '✓ Reserved';
+        e.target.style.background = '#059669';
+        e.target.style.borderColor = '#059669';
+        e.target.style.color = '#fff';
+
+        showToast(`🎉 Reserved <strong>${prodName}</strong>! Pickup OTP: <strong>${otp}</strong>`);
+      });
+    });
+  }
+
+  function initHyperlocalPage() {
+    window.renderHyperlocalPage = renderHyperlocalPage;
+    const searchInput = document.getElementById('hyperlocal-search-input');
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        renderHyperlocalPage();
       });
     }
 
-    if (askModal) {
-      askModal.addEventListener('click', (e) => {
-        if (e.target === askModal) askModal.classList.remove('active');
-      });
-    }
+    renderHyperlocalPage();
+  }
 
-    // Filter Modal for shops.html
-    const filterModal = document.getElementById('filter-modal');
-    const btnShopsFilter = document.getElementById('btn-shops-filter');
-    const btnApplyFilters = document.getElementById('btn-apply-filters');
+  // Initialize Reserved Products page and top badge
+  if (typeof updateReservationBadge === 'function') {
+    updateReservationBadge();
+  }
+  if (document.getElementById('reserved-products-page-list')) {
+    renderReservedProductsPage();
+  }
 
-    if (btnShopsFilter && filterModal) {
-      btnShopsFilter.addEventListener('click', () => {
-        filterModal.classList.add('active');
-      });
-    }
+  // Initialize Hyperlocal Market page
+  if (document.getElementById('hyperlocal-products-grid')) {
+    initHyperlocalPage();
+  }
 
-    if (filterModal) {
-      filterModal.addEventListener('click', (e) => {
-        if (e.target === filterModal) filterModal.classList.remove('active');
-      });
-    }
+  // Forward mouse wheel on fixed header to scrollable content sheet
+  const appHeader = document.querySelector('.app-header-gradient');
+  const mainSheet = document.querySelector('.curved-sheet-content');
+  if (appHeader && mainSheet) {
+    appHeader.addEventListener('wheel', (e) => {
+      mainSheet.scrollTop += e.deltaY;
+    }, { passive: true });
+  }
+});
 
-    if (btnApplyFilters && filterModal) {
-      btnApplyFilters.addEventListener('click', () => {
-        filterModal.classList.remove('active');
-        renderShopsPage();
-        showToast('✓ Filters applied successfully');
-      });
+// Also re-sync on pageshow (e.g. back navigation or cached restore)
+window.addEventListener('pageshow', () => {
+  if (typeof updateReservationBadge === 'function') updateReservationBadge();
+  if (document.getElementById('reserved-products-page-list')) {
+    if (typeof renderReservedProductsPage === 'function') renderReservedProductsPage();
+  }
+  if (document.getElementById('hyperlocal-products-grid')) {
+    if (typeof window.renderHyperlocalPage === 'function') {
+      window.renderHyperlocalPage();
     }
   }
 });

@@ -1,7 +1,7 @@
-# NearBuy — Malkangiri Seller Demo Data
-
+# SeekIt — Malkangiri Seller Demo Data
+ 
 **Location:** Malkangiri, Odisha 764087  
-**Purpose:** Demo/test data for the NearBuy project
+**Purpose:** Demo/test data for the SeekIt project
 
 > These are fictional seller accounts and product listings created for testing. Do not use these credentials for real accounts.
 
